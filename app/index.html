@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vice Coast Cover Studio — GTA 6-style cover art maker</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="app">
+  <section class="controls" aria-label="Cover editor">
+    <header>
+      <h1>Vice Coast Cover Studio</h1>
+      <p>Your photo, a caption, and a Vice City sunset — made into multi-panel cover art, exported in every post size.</p>
+    </header>
+
+    <section aria-label="Photos">
+      <h2>1 · Photos</h2>
+      <label class="upload">Add your own photos
+        <input id="photoUpload" type="file" accept="image/*" multiple>
+      </label>
+      <div id="thumbs" class="thumbs" aria-label="Photo library"></div>
+      <p class="hint">Click a photo to put it in the selected panel. Click a panel on the cover to select it, drag inside it to move the photo.</p>
+    </section>
+
+    <section aria-label="Panel">
+      <h2>2 · Selected panel</h2>
+      <div class="row">
+        <button id="prevPanel" type="button">← Prev</button>
+        <span id="panelLabel" role="status">Panel 1 of 9</span>
+        <button id="nextPanel" type="button">Next →</button>
+      </div>
+      <label>Zoom <input id="zoom" type="range" min="1" max="2.5" step="0.05" value="1"></label>
+      <label>Move left / right <input id="panX" type="range" min="-1" max="1" step="0.05" value="0"></label>
+      <label>Move up / down <input id="panY" type="range" min="-1" max="1" step="0.05" value="0"></label>
+      <label class="check"><input id="flip" type="checkbox"> Flip photo</label>
+      <button id="fillAll" type="button">Use this photo + crop in every panel</button>
+    </section>
+
+    <section aria-label="Layout">
+      <h2>3 · Layout</h2>
+      <div id="layoutPicker" class="picker"></div>
+    </section>
+
+    <section aria-label="Grade">
+      <h2>4 · Colour grade</h2>
+      <div id="gradePicker" class="picker"></div>
+    </section>
+
+    <section aria-label="Lettering">
+      <h2>5 · Lettering</h2>
+      <label>Title <input id="title" type="text" maxlength="30" value="NEON SHORE"></label>
+      <label>Subtitle <input id="subtitle" type="text" maxlength="40" value="a vice coast story"></label>
+      <label>Badge ribbon <input id="badge" type="text" maxlength="16" value="VICE COAST"></label>
+      <div id="titleStylePicker" class="picker"></div>
+    </section>
+
+    <section aria-label="Effects">
+      <h2>6 · Effects</h2>
+      <label class="check"><input id="frame" type="checkbox" checked> White poster frame</label>
+      <label class="check"><input id="grain" type="checkbox" checked> Film grain</label>
+      <label class="check"><input id="vignette" type="checkbox" checked> Vignette</label>
+      <label class="check"><input id="halftone" type="checkbox" checked> Halftone title block</label>
+      <label class="check"><input id="sun" type="checkbox" checked> Palm-sun art</label>
+    </section>
+
+    <section aria-label="Export">
+      <h2>7 · Export</h2>
+      <label>Preview size
+        <select id="previewSize">
+          <option value="square">Square 1080 x 1080</option>
+          <option value="portrait">Portrait 1080 x 1350</option>
+          <option value="wide">Wide 1920 x 1080</option>
+          <option value="story">Story 1080 x 1920</option>
+        </select>
+      </label>
+      <button id="exportAll" type="button" class="primary">Export all 4 sizes (PNG)</button>
+      <div class="row wrap">
+        <button id="export-square" type="button">Square</button>
+        <button id="export-portrait" type="button">Portrait</button>
+        <button id="export-wide" type="button">Wide</button>
+        <button id="export-story" type="button">Story</button>
+      </div>
+    </section>
+
+    <div class="row">
+      <button id="undo" type="button">Undo</button>
+      <button id="redo" type="button">Redo</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+    <p id="status" role="status"></p>
+  </section>
+
+  <section class="preview" aria-label="Live preview">
+    <canvas id="cover" width="1080" height="1080" aria-label="The cover, live preview"></canvas>
+  </section>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
