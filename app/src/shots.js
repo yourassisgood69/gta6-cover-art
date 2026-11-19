@@ -5,13 +5,18 @@
 // then sets window.__shotReady once the paint has landed (double rAF).
 import { defaultPanels } from './cover.js';
 
-function panelsFor(order, zooms) {
+// `frames` holds one [ox, oy] crop offset per entry of `order`, measured so
+// the crop window centres on the photo's face (see the framing table in the
+// build notes): a wide panel on a portrait photo otherwise cuts faces off.
+function panelsFor(order, zooms, frames) {
   const panels = defaultPanels();
   for (let i = 0; i < panels.length; i++) {
-    panels[i].photo = order[i % order.length];
-    panels[i].zoom = zooms ? zooms[i % zooms.length] : 1;
-    panels[i].ox = 0;
-    panels[i].oy = 0;
+    const k = i % order.length;
+    panels[i].photo = order[k];
+    panels[i].zoom = zooms ? zooms[k] : 1;
+    const f = frames ? frames[k] : null;
+    panels[i].ox = f ? f[0] : 0;
+    panels[i].oy = f ? f[1] : 0;
     panels[i].flip = false;
   }
   return panels;
@@ -34,7 +39,8 @@ const SCENES = {
       halftone: true,
       sun: true,
       selected: 0,
-      panels: panelsFor([0, 1, 2, 3], [1.15, 1.1, 1.2, 1.05]),
+      panels: panelsFor([0, 1, 2, 3], [1.15, 1.1, 1.2, 1.05],
+        [[0.16, 0.82], [0.11, 1.0], [-0.07, 0.7], [-0.06, 1.0]]),
     },
   },
   portrait: {
@@ -53,7 +59,8 @@ const SCENES = {
       halftone: true,
       sun: true,
       selected: 0,
-      panels: panelsFor([2, 0, 1, 3], [1.1, 1.15, 1.1, 1.2]),
+      panels: panelsFor([2, 0, 1, 3], [1.1, 1.15, 1.1, 1.2],
+        [[-0.15, 0.12], [0.3, 0.18], [0.11, 0.59], [-0.12, 0.85]]),
     },
   },
   square: {
@@ -72,7 +79,8 @@ const SCENES = {
       halftone: true,
       sun: true,
       selected: 0,
-      panels: panelsFor([3, 0, 1, 2], [1.1, 1.15, 1.05, 1.2]),
+      panels: panelsFor([3, 0, 1, 2], [1.1, 1.15, 1.05, 1.2],
+        [[-0.11, 0.9], [0.26, 0.18], [0.07, 0.64], [-0.08, 0.23]]),
     },
   },
   editor: {
@@ -91,7 +99,8 @@ const SCENES = {
       halftone: true,
       sun: true,
       selected: 0,
-      panels: panelsFor([0, 2, 1, 3], [1.15, 1.1, 1.2, 1.05]),
+      panels: panelsFor([0, 2, 1, 3], [1.15, 1.1, 1.2, 1.05],
+        [[0.42, 0.17], [-0.07, 0.13], [0.12, 0.8], [-0.07, 0.94]]),
     },
   },
 };

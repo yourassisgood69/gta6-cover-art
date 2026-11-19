@@ -110,6 +110,7 @@ function buildPicker(el, items, current, onPick) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'pick' + (item.id === current ? ' active' : '');
+    b.setAttribute('aria-pressed', String(item.id === current));
     b.textContent = item.label;
     b.dataset.id = item.id;
     b.addEventListener('click', () => {
@@ -304,6 +305,24 @@ function bindControls() {
   }
   document.getElementById('undo').addEventListener('click', undo);
   document.getElementById('redo').addEventListener('click', redo);
+  document.getElementById('shuffle').addEventListener('click', () => {
+    pushHistory();
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    state.layout = pick(LAYOUTS).id;
+    state.grade = pick(GRADES).id;
+    state.titleStyle = pick(TITLE_STYLES).id;
+    state.selected = 0;
+    for (const p of state.panels) {
+      p.photo = photos.length ? Math.floor(Math.random() * photos.length) : 0;
+      p.zoom = 1 + Math.random() * 0.3;
+      p.ox = (Math.random() * 2 - 1) * 0.5;
+      p.oy = (Math.random() * 2 - 1) * 0.5;
+      p.flip = Math.random() < 0.15;
+    }
+    syncControls();
+    applyPreviewSize();
+    setStatus('Shuffled into a fresh cover — caption kept, everything else new.');
+  });
   document.getElementById('reset').addEventListener('click', () => {
     pushHistory();
     const keepPanels = state.panels;

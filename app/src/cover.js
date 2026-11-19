@@ -37,12 +37,23 @@ export const SAMPLE_PHOTOS = [
   { file: 'man-pier.jpg', name: 'Pier Days' },
 ];
 
+// Default crop per sample photo, so a cover starts with faces in frame:
+// each sample's face sits above the photo's centre, and a wide panel on a
+// portrait photo otherwise cuts it off. drawPhotoInto clamps these to what
+// each panel can actually show, so tall panels ignore the excess.
+const DEFAULT_FRAMES = [
+  { ox: 0.15, oy: 0.6 }, // woman-car: face upper-centre
+  { ox: 0.1, oy: 0.7 }, // man-rooftop: face upper third, portrait photo
+  { ox: -0.05, oy: 0.5 }, // friends-neon: two faces, upper third
+  { ox: -0.05, oy: 0.8 }, // man-pier: face upper third, portrait photo
+];
+
 export function defaultPanels() {
   return Array.from({ length: 9 }, (_, i) => ({
     photo: i % SAMPLE_PHOTOS.length,
     zoom: 1,
-    ox: 0,
-    oy: 0,
+    ox: DEFAULT_FRAMES[i % SAMPLE_PHOTOS.length].ox,
+    oy: DEFAULT_FRAMES[i % SAMPLE_PHOTOS.length].oy,
     flip: false,
   }));
 }
@@ -166,8 +177,15 @@ function drawPhotoInto(ctx, img, rect, panel, W, H) {
     const scale = base * (panel.zoom || 1);
     const dw = img.naturalWidth * scale;
     const dh = img.naturalHeight * scale;
-    const dx = inset + (iw - dw) / 2 + (panel.ox || 0) * iw * 0.5;
-    const dy = inset + (ih - dh) / 2 + (panel.oy || 0) * ih * 0.5;
+    // Clamp the pan so the photo always covers its cell: without this, a
+    // large pan on a photo that barely covers the panel opens a strip of
+    // the white gutter at the cell's edge.
+    const oxLim = Math.max(0, (dw - iw) / iw);
+    const oyLim = Math.max(0, (dh - ih) / ih);
+    const ox = Math.max(-oxLim, Math.min(oxLim, panel.ox || 0));
+    const oy = Math.max(-oyLim, Math.min(oyLim, panel.oy || 0));
+    const dx = inset + (iw - dw) / 2 + ox * iw * 0.5;
+    const dy = inset + (ih - dh) / 2 + oy * ih * 0.5;
     if (panel.flip) {
       ctx.translate(inset + iw / 2, 0);
       ctx.scale(-1, 1);
@@ -337,6 +355,23 @@ function fitFont(ctx, text, maxWidth, startSize, family, weight) {
   return size;
 }
 
+// Where the palm-sun medallion goes for a title zone: inside the title band,
+// on the side the lettering leaves free, so it never covers a photo panel or
+// the badge ribbon. The story layout's title sits at the top, so its
+// medallion drops to the bottom-left corner instead.
+export function sunPlacement(zone, W, H) {
+  if (zone.y < 0.5) {
+    const r = Math.min(W, H) * 0.09;
+    return { cx: r * 1.15, cy: H - r * 1.15, r, inBand: false };
+  }
+  const r = Math.min(zone.h * H * 0.44, W * 0.075);
+  const cy = (zone.y + zone.h / 2) * H;
+  const cx = zone.align === 'left'
+    ? (zone.x + zone.w) * W - r * 1.05
+    : zone.x * W + r * 1.05;
+  return { cx, cy, r, inBand: true };
+}
+
 function drawTitleBlock(ctx, state, zone, W, H) {
   const x = zone.x * W;
   const y = zone.y * H;
@@ -358,12 +393,17 @@ function drawTitleBlock(ctx, state, zone, W, H) {
   ctx.restore();
 
   ctx.save();
+  // When the palm-sun medallion sits in this band, keep the lettering clear
+  // of it: shrink the title's max width and shift a centred title aside.
+  const sun = state.sun ? sunPlacement(zone, W, H) : null;
+  const sunR = sun && sun.inBand ? sun.r : 0;
+  const titleMaxW = w * 0.98 - (sunR > 0 ? sunR * 2.4 : 0);
   ctx.textAlign = zone.align === 'left' ? 'left' : 'center';
-  const tx = zone.align === 'left' ? x : x + w / 2;
+  const tx = zone.align === 'left' ? x : x + w / 2 + (sunR > 0 ? sunR * 1.2 : 0);
   const baseline = y + h * 0.62;
 
   if (title) {
-    const size = fitFont(ctx, title, w * 0.98, h * 0.52, 'Anton, sans-serif', '');
+    const size = fitFont(ctx, title, titleMaxW, h * 0.52, 'Anton, sans-serif', '');
     ctx.font = `${size}px Anton, sans-serif`;
     ctx.textBaseline = 'alphabetic';
     if (state.titleStyle === 'gradient') {
@@ -403,7 +443,7 @@ function drawTitleBlock(ctx, state, zone, W, H) {
   }
 
   if (subtitle) {
-    const subSize = fitFont(ctx, subtitle, w * 0.9, h * 0.2, 'Pacifico, cursive', '');
+    const subSize = fitFont(ctx, subtitle, w * 0.9 - (sunR > 0 ? sunR * 2.4 : 0), h * 0.2, 'Pacifico, cursive', '');
     ctx.font = `${subSize}px Pacifico, cursive`;
     ctx.fillStyle = '#ffd166';
     ctx.shadowColor = 'rgba(255,45,149,0.8)';
@@ -464,12 +504,12 @@ export function drawCoverArt(canvas, photos, state) {
 
   applyGrade(ctx, state.grade, W, H);
 
-  if (state.sun) {
-    const r = Math.min(W, H) * 0.1;
-    drawPalmSun(ctx, W - r * 1.2, H * 0.15, r, W, H);
-  }
-
   drawTitleBlock(ctx, state, title, W, H);
+
+  if (state.sun) {
+    const sun = sunPlacement(title, W, H);
+    drawPalmSun(ctx, sun.cx, sun.cy, sun.r, W, H);
+  }
 
   if (state.vignette) {
     const vg = ctx.createRadialGradient(
